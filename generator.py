@@ -925,6 +925,13 @@ body.dark-mode .dropdown-hint {{
       var pattern = '(' + forms.map(function(s) {{ return escapeRegExp(s); }}).join('|') + ')';
       return new RegExp(pattern, 'gi');
     }}
+    
+     /* 👉 在这里插入： */
+  function getKwRegex() {{
+    if (!currentSearchKeyword) return null;
+    return buildHighlightRegex(currentSearchKeyword);
+  }}
+    
     /* ---------------- 全文语言切换相关函数 ---------------- */
     function initOriginalText(root) {{
       if (root.nodeType === Node.TEXT_NODE) {{
@@ -1318,23 +1325,27 @@ if (searchType === 'article') {{
                   }}
 
                   // ====== 新增：标题命中 → 先缓存原始 HTML 再高亮 ======
-          if (result.foundInHeader && articleHeader) {{
-            if (!articleHeader.dataset.rawHtml) {{ articleHeader.dataset.rawHtml = articleHeader.innerHTML; }}
-              const regH = kwRegex;  // 多形态
-              articleHeader.innerHTML = articleHeader.innerHTML.replace(regH, '<span class="keyword-highlight">$1</span>');
-              articleHeader.classList.add('article-search-highlight');
-              articleHeader.onclick = function() {{ removeArticleHighlight(articleHeader); }};
-            }}
-
-         // ====== 新增：正文命中 → 先缓存原始 HTML 再高亮 ======
-         // ====== 正文命中时的高亮（整段替换） ======
-            if (result.foundInContent && articleContent) {{
-              if (!articleContent.dataset.rawHtml) {{ articleContent.dataset.rawHtml = articleContent.innerHTML; }}
-              const regC = kwRegex;  // 多形态
-              articleContent.innerHTML = articleContent.innerHTML.replace(regC, '<span class="keyword-highlight">$1</span>');
-              articleContent.classList.add('article-search-highlight');
-              articleContent.onclick = function() {{ removeArticleHighlight(articleContent); }};
-            }}
+                // ====== 标题命中 → 先缓存原始 HTML 再高亮 ======
+                if (result.foundInHeader && articleHeader) {{
+                  if (!articleHeader.dataset.rawHtml) {{ articleHeader.dataset.rawHtml = articleHeader.innerHTML; }}
+                  const regH = getKwRegex();
+                  if (regH) {{
+                    articleHeader.innerHTML = articleHeader.innerHTML.replace(regH, '<span class="keyword-highlight">$1</span>');
+                  }}
+                  articleHeader.classList.add('article-search-highlight');
+                  articleHeader.onclick = function() {{ removeArticleHighlight(articleHeader); }};
+                }}
+                
+                // ====== 正文命中 → 先缓存原始 HTML 再高亮 ======
+                if (result.foundInContent && articleContent) {{
+                  if (!articleContent.dataset.rawHtml) {{ articleContent.dataset.rawHtml = articleContent.innerHTML; }}
+                  const regC = getKwRegex();
+                  if (regC) {{
+                    articleContent.innerHTML = articleContent.innerHTML.replace(regC, '<span class="keyword-highlight">$1</span>');
+                  }}
+                  articleContent.classList.add('article-search-highlight');
+                  articleContent.onclick = function() {{ removeArticleHighlight(articleContent); }};
+                }}
 
                 }} else {{
                   // 评论命中：滚动并高亮评论
